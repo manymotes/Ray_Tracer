@@ -1,6 +1,7 @@
 #include <fstream>
 #include <cmath>
 #include <string>
+#include <iostream>
 
 
 struct Vec3 {
@@ -19,6 +20,14 @@ struct Vec3 {
 
 inline double dot(const Vec3& a, const Vec3& b) {
     return (a.x*b.x + a.y*b.y + a.z*b.z);
+}
+Vec3 MultiplyScalar(Vec3 a, float b) { return Vec3(a.x * b, a.y * b, a.z * b); }
+
+bool sign(int input) {
+    if (input > 0.1f)
+        return true;
+    else
+        return false;
 }
 
 static Vec3 CrossProduct(Vec3 v1, Vec3 v2)
@@ -104,28 +113,25 @@ struct Triangle {
         Vec3 pn = CrossProduct(a, b);
         return pn;
     }
-    bool intersect(const Ray& ray, double &t) const {
+    bool intersect(const Ray& ray, double &t_out) const {
+        
+        Vec3 v1 = a-b;
+                Vec3 v2 = b-c;
+                Vec3 normal = CrossProduct(a, b);
+        
+        const Vec3 Origin = ray.o;
+        const Vec3 Direction = ray.d;
+        //Vec3 normal = CrossProduct(b-a,tA),(b-c)).normalize();
+        double t = dot(normal, (b - Origin))/ dot(normal, Direction);
+        Vec3 intersect = (Origin + MultiplyScalar(Direction, t));
+        
+        bool signA = sign(dot(CrossProduct((b - a),(intersect - a)),normal));
+        bool signB = sign(dot(CrossProduct((c - b),(intersect - b)),normal));
+        bool signC = sign(dot(CrossProduct((a - c),(intersect - c)),normal));
         
         
-        Vec3 pvec = CrossProduct(ray.d, (a-b));
-        float det = dot((b-c), pvec);
-        Vec3 tvec = ray.o - a;
-        float u = dot(tvec, pvec);
-        if (u < 0.0f || u > det) {
-            return false;
-        }
-        Vec3 qvec = CrossProduct(tvec, (b-c));
-        float v = dot(ray.d, qvec);
-        if (v < 0.0f || (u + v) > det) {
-            return false;
-        }
-        float dp = dot((a-b), qvec);
-        dp *= 1.0f / det;
-        if (dp < 0.00001f) {
-            return false;
-        }
-        //TriangleDistance = dp;
-        return true;
+        t_out = t;
+        return ((signA == signB) && (signA == signC) && t>0.1);
         
         
         
@@ -266,21 +272,65 @@ void clamp255(Vec3& col) {
     col.z = (col.z > 255) ? 255 : (col.z < 0) ? 0 : col.z;
 }
 
+double cc(float orig)
+{
+    if(orig == 0)
+    {
+        return 255;
+    }
+    double off = orig*250/.5;
+    if (orig>0)
+    {
+        return (off +250);
+    }
+    else
+    {
+        return (250 -off);
+    }
+    
+    
+}
+
+double cy(float orig)
+{
+    if(orig == 0)
+    {
+        return 255;
+    }
+    double off = orig*250/.5;
+    if (orig<0)
+    {
+        return (off +250);
+    }
+    else
+    {
+        return (250 -off);
+    }
+    
+    std::cout <<  std::endl  << "helllo" << (250 -off) << std::endl << "test\n";
+}
+
 int main() {
     
     const int H = 500;
     const int W = 500;
     
     const Vec3 white(255, 255, 255);
-    const Vec3 black(0, 0, 0);
+    const Vec3 black(40, 40, 40);
     const Vec3 red(255, 0, 0);
     const Vec3 green(0, 100, 0);
     
-    const Sphere sphere(Vec3(W*0.5 + 50, 150, 50), 50);
-    const Sphere2 sphere2(Vec3(200,75, 50), 50);
-      const Triangle triangle(Vec3(W*0.5-30, H*0.5-30, 60), Vec3(W*0.5, H*0.5+20, 50), Vec3(W*0.5-20, H*0.5-30, 60));
+   // const Sphere sphere(Vec3(W*0.5 + 50, 150, 50), 50);
+   // const Sphere2 sphere2(Vec3(200,75, 50), 50);
+    const Triangle triangle(Vec3(W*0.5-30, H*0.5-30, 60), Vec3(W*0.5, H*0.5+20, 50), Vec3(W*0.5-20, H*0.5-30, 60));
     
-    const Sphere light(Vec3(0, 0, 50), 1);
+    const Sphere light(Vec3(500, 250, 50), 1);
+    
+    const Sphere sphere(Vec3(cc(.35), cc(0), 50), 20);
+    const Sphere2 sphere2(Vec3(cc(.2), cc(0), 100), 55);
+//    const Triangle triangle(Vec3(cc(.3),cy(-.3), cc(-.4)), Vec3(cc(0), cy(.3), cc(-.1)), Vec3(cc(-.3), cy(-.3), cc(.2)));
+//
+//    const Sphere light(Vec3(300, 250, cc(.5)), 1);
     
     std::ofstream out("out.ppm");
     out << "P3\n" << W << ' ' << H << ' ' << "255\n";
@@ -318,7 +368,7 @@ int main() {
                 const Vec3 pi = ray.o + ray.d*t;
                 const Vec3 L = light.c - pi;
                 const double dt = dot(L.normalize(), triangle.getNormal().normalize());
-                pix_col =   green; // (green + white*dt) * 0.5;
+                pix_col = (green + white*dt) * 0.5;
                 clamp255(pix_col);
             }
             
