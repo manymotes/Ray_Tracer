@@ -14,6 +14,13 @@ struct Vec3 {
     Vec3 normalize() const {
         double mg = sqrt(x*x + y*y + z*z);
         return Vec3(x/mg,y/mg,z/mg);
+        
+    
+    }
+    double findLength() const
+    {
+        double toreturn =sqrt(x*x + y*y + z*z);
+        return toreturn;
     }
 };
 
@@ -48,11 +55,58 @@ struct Ray {
     Ray(const Vec3& o, const Vec3& d) : o(o), d(d) {}
 };
 
+//struct Sphere {
+//    Vec3 c;
+//    double r;
+//    Sphere(const Vec3& c, double r) : c(c), r(r) {}
+//    Vec3 getNormal(const Vec3& pi) const { return (pi - c) / r; }
+//    bool intersect(const Ray& ray, double &t) const {
+//        const Vec3 o = ray.o;
+//        const Vec3 d = ray.d;
+//        const Vec3 oc = c - o;
+//        const double tca = dot(d.normalize(), oc);
+//
+//        if (tca < 0)
+//        {
+//            return false;
+//        }
+//
+//        const double thc = r*r - oc.findLength() + tca * tca;
+//
+//        if (thc < 0)
+//        {
+//            return false;
+//        }
+//
+//        t = tca - thc;
+//
+//
+//
+////        const double b = 2 * dot(oc, d);
+////        const double c = dot(oc, oc) - r*r;
+////        double disc = b*b - 4 * c;
+//
+//
+////        if (disc < 1e-4) return false;
+////        disc = sqrt(disc);
+////        const double t0 = -b - disc;
+////        const double t1 = -b + disc;
+////        t = (t0 < t1) ? t0 : t1;
+//
+//
+//
+//        return true;
+//    }
+//};
+
+
 struct Sphere {
     Vec3 c;
     double r;
     Sphere(const Vec3& c, double r) : c(c), r(r) {}
     Vec3 getNormal(const Vec3& pi) const { return (pi - c) / r; }
+    
+    
     bool intersect(const Ray& ray, double &t) const {
         const Vec3 o = ray.o;
         const Vec3 d = ray.d;
@@ -64,16 +118,23 @@ struct Sphere {
         disc = sqrt(disc);
         const double t0 = -b - disc;
         const double t1 = -b + disc;
+        
+        const double tca = dot(d.normalize(), oc);
+        const double thc = r*r - oc.findLength() + tca * tca;
+       // t = tca - thc;
         t = (t0 < t1) ? t0 : t1;
         return true;
     }
 };
+
 
 struct Sphere2 {
     Vec3 c;
     double r;
     Sphere2(const Vec3& c, double r) : c(c), r(r) {}
     Vec3 getNormal(const Vec3& pi) const { return (pi - c) / r; }
+   
+    
     bool intersect(const Ray& ray, double &t) const {
         const Vec3 o = ray.o;
         const Vec3 d = ray.d;
@@ -85,6 +146,10 @@ struct Sphere2 {
         disc = sqrt(disc);
         const double t0 = -b - disc;
         const double t1 = -b + disc;
+        
+        const double tca = dot(d.normalize(), oc);
+        const double thc = r*r - oc.findLength() + tca * tca;
+        // t = tca - thc;
         t = (t0 < t1) ? t0 : t1;
         return true;
     }
@@ -109,27 +174,31 @@ struct Triangle {
     Vec3 getNormal() const
     {
         Vec3 v1 = a-b;
-        Vec3 v2 = b-c;
-        Vec3 pn = CrossProduct(a, b);
-        return pn;
+        Vec3 v2 = c-b;
+        Vec3 pn = CrossProduct(v2, v1);
+        return pn.normalize();
     }
     bool intersect(const Ray& ray, double &t_out) const {
         
-        Vec3 v1 = a-b;
-                Vec3 v2 = b-c;
-                Vec3 normal = CrossProduct(a, b);
+       
+        Vec3 pn = getNormal();
         
-        const Vec3 Origin = ray.o;
-        const Vec3 Direction = ray.d;
+        const Vec3 o = ray.o;
+        const Vec3 d = ray.d;
         //Vec3 normal = CrossProduct(b-a,tA),(b-c)).normalize();
-        double t = dot(normal, (b - Origin))/ dot(normal, Direction);
-        Vec3 intersect = (Origin + MultiplyScalar(Direction, t));
+        double dis =  -dot(pn, b);
         
-        bool signA = sign(dot(CrossProduct((b - a),(intersect - a)),normal));
-        bool signB = sign(dot(CrossProduct((c - b),(intersect - b)),normal));
-        bool signC = sign(dot(CrossProduct((a - c),(intersect - c)),normal));
+        double t = -((pn.x * o.x) + (pn.y * o.y) + (pn.z * o.z) + dis)/( (pn.x * d.x) + (pn.y * d.y) + (pn.z * d.z));
+        
+        Vec3 intersect = (o + MultiplyScalar(d, t));
+        
+        bool signA = sign(dot(CrossProduct((b - a),(intersect - a)),pn));
+        bool signB = sign(dot(CrossProduct((c - b),(intersect - b)),pn));
+        bool signC = sign(dot(CrossProduct((a - c),(intersect - c)),pn));
         
         
+        //help with this t value
+        //t_out = (t0 < t1) ? t0 : t1;
         t_out = t;
         return ((signA == signB) && (signA == signC) && t>0.1);
         
@@ -173,7 +242,7 @@ struct Triangle {
 //
 //        //gets intersection of ray and plane
 //
-//        double dis = dot(pn, b);
+//        double dis = -dot(pn, b);
 //        Vec3 intersect = -((pn.x * o.x) + (pn.y * o.y) + (pn.z * o.z) + dis)/( (pn.x * d.x) + (pn.y * d.y) + (pn.z * d.z));
 //
 //
@@ -267,9 +336,14 @@ struct Triangle {
 };
 
 void clamp255(Vec3& col) {
+    
+ 
+    
+    
     col.x = (col.x > 255) ? 255 : (col.x < 0) ? 0 : col.x;
     col.y = (col.y > 255) ? 255 : (col.y < 0) ? 0 : col.y;
     col.z = (col.z > 255) ? 255 : (col.z < 0) ? 0 : col.z;
+    
 }
 
 double cc(float orig)
@@ -300,7 +374,7 @@ double cy(float orig)
     double off = orig*250/.5;
     if (orig<0)
     {
-        return (off +250);
+        return (off*-1 +250);
     }
     else
     {
@@ -314,60 +388,107 @@ int main() {
     
     const int H = 500;
     const int W = 500;
+    //convet to floats
+    const Vec3 white(1.0, 1.0, 1.0);
+    const Vec3 black(.1, .1, .1);
+    const Vec3 red(1.0, 0, 0);
+    const Vec3 green(0, .3, 0);
+    const Vec3 ambient(.1, .1, .1);
     
-    const Vec3 white(255, 255, 255);
-    const Vec3 black(40, 40, 40);
-    const Vec3 red(255, 0, 0);
-    const Vec3 green(0, 100, 0);
     
-   // const Sphere sphere(Vec3(W*0.5 + 50, 150, 50), 50);
-   // const Sphere2 sphere2(Vec3(200,75, 50), 50);
-    const Triangle triangle(Vec3(W*0.5-30, H*0.5-30, 60), Vec3(W*0.5, H*0.5+20, 50), Vec3(W*0.5-20, H*0.5-30, 60));
+    //const Sphere2 sphere2(Vec3(W*0.5 + 50, 450, 50), 50);
+    //const Sphere sphere(Vec3(400,390, 50), 50);
+    //const Triangle triangle(Vec3(100, 290, 60), Vec3(150, 0, 50), Vec3(250, 330, 160));
     
-    const Sphere light(Vec3(500, 250, 50), 1);
+  
+   
+   // const Sphere light(Vec3(500, 250, 50), 1);
     
-    const Sphere sphere(Vec3(cc(.35), cc(0), 50), 20);
-    const Sphere2 sphere2(Vec3(cc(.2), cc(0), 100), 55);
-//    const Triangle triangle(Vec3(cc(.3),cy(-.3), cc(-.4)), Vec3(cc(0), cy(.3), cc(-.1)), Vec3(cc(-.3), cy(-.3), cc(.2)));
-//
-//    const Sphere light(Vec3(300, 250, cc(.5)), 1);
+    const Sphere sphere(Vec3(.35, 0, -1) , .05);
+    const Sphere2 sphere2(Vec3(.2), 0, -1), .75);
+   const Triangle triangle(Vec3(.3,-.3,-.4), Vec3(0, .3, -.1), Vec3(cc(-.3), cy(-.3), cc(.2)));
+
+    const Sphere light(Vec3(1, 0, 0), 1);
     
     std::ofstream out("out.ppm");
     out << "P3\n" << W << ' ' << H << ' ' << "255\n";
     
     double t;
+    double t2;
+    double tTriangle;
     Vec3 pix_col(black);
+    
+    Vec3 CameraLookAt = Vec3( 0, 0, 0);
+    Vec3 CameraLookFrom = Vec3 (0, 0, 1);
+    Vec3 diff = CameraLookAt - CameraLookFrom;
+    
+    
+    double d = sqrt(diff.x*diff.x + diff.y * diff.y + diff.z * diff.z);
+    
+    double FieldOfView  = 28;
+    
+    //in radians !!!!!!
+    double width = tan(FieldOfView)*d;
+    
+    double pixscale = 2*width/500;
+    
+    
     
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
             pix_col = black;
             
-            const Ray ray(Vec3(x,y,0),Vec3(0,0,1));
+            Vec3 pixelPoint = Vec3( (- width + (x *pixscale) + .5 * pixscale), ( width - (y *pixscale) - .5 * pixscale), 0);
             
-            if (sphere2.intersect(ray, t)) {
+            Vec3   rayDirection = (pixelPoint - CameraLookFrom).normalize();
+            
+            //0001 for first scene
+            const Ray ray(Vec3(0,0,1),  rayDirection);
+            
+            
+            
+            
+             if (sphere2.intersect(ray, t)) {
                 const Vec3 pi = ray.o + ray.d*t;
                 const Vec3 L = light.c - pi;
-                const Vec3 N = sphere.getNormal(pi);
+                const Vec3 N = sphere2.getNormal(pi);
                 const double dt = dot(L.normalize(), N.normalize());
+                //shadow ray check here
                 
+                /*
+                 shadow ray direction (l – p) / ||l – p||
+                 Distance to the light from the intersection point: tl = ||l – p||
+                 
+                 
+                 In theory, the possible range of t-values is t  [0, tl]
+                 Due to numerical (floating-point) error, test in the range t  [ε, t1] where ε  is some small value (such as 2–16)
+                 
+                 
+                 */
                 pix_col = (red + white*dt) * 0.5;
                 clamp255(pix_col);
             }
-            if (sphere.intersect(ray, t)) {
-                const Vec3 pi = ray.o + ray.d*t;
-                const Vec3 L = light.c - pi;
+            
+            if (sphere.intersect(ray, t2)) {
+                const Vec3 pi = ray.o + ray.d*t2;
+                const Vec3 L = Vec3(1, 0, 0);
                 const Vec3 N = sphere.getNormal(pi);
-                const double dt = dot(L.normalize(), N.normalize());
+                const double dt = dot(L, N.normalize());
                 
                 //shadow ray check here~!!!!!!!!
-                pix_col = (red + white*dt) * 0.5;
+                // ambient lighit
+                pix_col = (red + white*dt ) * 0.5;
                 clamp255(pix_col);
             }
-            if (triangle.intersect(ray, t))
+            if (triangle.intersect(ray, tTriangle))
             {
-                const Vec3 pi = ray.o + ray.d*t;
+
+                //assing two different t values
+                const Vec3 pi = ray.o + ray.d*tTriangle;
                 const Vec3 L = light.c - pi;
                 const double dt = dot(L.normalize(), triangle.getNormal().normalize());
+
+                //shadow raytrace
                 pix_col = (green + white*dt) * 0.5;
                 clamp255(pix_col);
             }
