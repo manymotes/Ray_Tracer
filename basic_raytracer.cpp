@@ -645,8 +645,7 @@ int main() {
                 
                 double bias = .0001;
                 
-                double distance = L.findLength();
-                Ray shadowRay(pi + N * .002, ((L - pi).normalize())/distance);
+                Ray shadowRay((pi + N * bias), (L).normalize());
                 if (sphere2.intersect(shadowRay, t2) || triangle.intersect(shadowRay, tTriangle) )
                 {
                     pix_col = ambient * yellow;
@@ -681,7 +680,7 @@ int main() {
                 
                 double bias = .0001;
                 
-                Ray shadowRay((pi + N * bias), (L - pi).normalize());
+                Ray shadowRay((pi + N * bias), (L).normalize());
                 //Ray shadowRay2((pi + N * bias), (L - pi).normalize() * -1);
                 if (sphere2.intersect(shadowRay, t2) || triangle2.intersect(shadowRay , tTriangle2))
                 {
@@ -708,7 +707,7 @@ int main() {
                  
                  double bias = .0001;
                 
-                Ray shadowRay(pi + N * bias, (L - pi).normalize());
+                Ray shadowRay(pi + N * bias, (L).normalize());
              if (sphere.intersect(shadowRay, t))
              {
                  pix_col = ambient * red;
@@ -746,7 +745,7 @@ int main() {
                 
                 double bias = .0001;
                 
-                Ray shadowRay(pi + N * bias, (L - pi).normalize());
+                Ray shadowRay(pi + N * bias, (L).normalize());
                 
                 
                 if (triangle.intersect(shadowRay, tTriangle) || triangle2.intersect(shadowRay, tTriangle2))
