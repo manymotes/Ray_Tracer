@@ -54,7 +54,7 @@ static Vec3 CrossProduct(Vec3 v1, Vec3 v2)
     (
      v1.y * v2.z - v1.z * v2.y,
      v1.z * v2.x - v1.x * v2.z,
-     v1.x * v2.y - v1.z * v2.x
+     v1.x * v2.y - v1.y * v2.x
      );
     
     return toReturn;
@@ -160,17 +160,15 @@ struct Triangle {
 
     Vec3 getNormal() const
     {
-        Vec3 v1 = a-b;
-        Vec3 v2 = c-b;
-        Vec3 pn = CrossProduct(v2, v1);
+        Vec3 v1 = b-a;
+        Vec3 v2 = c-a;
+        Vec3 pn = CrossProduct(v1, v2);
         return pn.normalize();
     }
  
     bool intersect(const Ray& ray, double &t_out) const {
         
-   
-        
-
+ 
         const Vec3 o = ray.o;
         const Vec3 d = ray.d;
         //        const Vec3 oc = o - c;
@@ -180,7 +178,7 @@ struct Triangle {
 //        Vec3 v1 = a-b;
 //        Vec3 v2 = b-c;
         Vec3 pn = getNormal();
-
+        
         ////!!!!! find dominant axis!!!!!
         std::string dominatAxis;
         if (abs(pn.x) > abs(pn.y))
@@ -209,13 +207,13 @@ struct Triangle {
         double dis = -dot(pn, b);
         double t = -((pn.x * o.x) + (pn.y * o.y) + (pn.z * o.z) + dis)/( (pn.x * d.x) + (pn.y * d.y) + (pn.z * d.z));
         t_out = t;
-
-       Vec2 projectedVertices0 = Vec2(a.y, a.z);
-       Vec2 projectedVertices1 =Vec2(b.y, b.z);
-       Vec2 projectedVertices2 = Vec2(c.y, c.z);
+        
+        Vec2 projectedVertices0 = Vec2(a.y, a.z);
+        Vec2 projectedVertices1 =Vec2(b.y, b.z);
+        Vec2 projectedVertices2 = Vec2(c.y, c.z);
         Vec3 intersect = Vec3((o.x + d.x*t), (o.y + d.y*t), (o.z + d.z*t));
         Vec2 ri = Vec2(intersect.y, intersect.z);
-
+        
         if (dominatAxis == "x")
         {
             projectedVertices0 = Vec2(a.y, a.z);
@@ -239,16 +237,15 @@ struct Triangle {
         }
 
 
-
         //translate verticies by -ri
         projectedVertices0 = projectedVertices0 - ri;
         projectedVertices1 = projectedVertices1 - ri;
         projectedVertices2 = projectedVertices2 - ri;
         
         Vec2 trianlgeEdges[4] = {projectedVertices0, projectedVertices1, projectedVertices2, projectedVertices0};
-
+        
         ri = ri - ri;
-
+        
         int signHolder;
         if (trianlgeEdges[0].y < 0 )
         {
@@ -258,10 +255,10 @@ struct Triangle {
         {
             signHolder = 1;
         }
-
+        
         int nextsing;
         int numCrossing = 0;
-
+        
         for( int j = 0; j < 3; j++)
         {
             if (trianlgeEdges[j+1].y < 0)
@@ -271,7 +268,7 @@ struct Triangle {
             else {
                 nextsing = 1;
             }
-
+            
             if (signHolder != nextsing)
             {
                 if(trianlgeEdges[j].x > 0 && trianlgeEdges[j+1].x > 0)
@@ -281,7 +278,7 @@ struct Triangle {
                 else if(trianlgeEdges[j].x > 0 || trianlgeEdges[j+1].x > 0)
                 {
                     float uCross = trianlgeEdges[j].x - trianlgeEdges[j].y * (trianlgeEdges[j+1].x - trianlgeEdges[j].x)/(trianlgeEdges[j+1].y - trianlgeEdges[j].y);
-
+                    
                     if (uCross > 0)
                     {
                         numCrossing += 1;
@@ -290,13 +287,14 @@ struct Triangle {
             }
             signHolder = nextsing;
         }
-
+        
         if (numCrossing % 2== 0)
         {
             return false;
         }
         return true;
     }
+    
 
 };
 
@@ -311,78 +309,48 @@ struct Triangle2 {
         return ray.o  + (ray.d * magnitude);
     }
     
-     Vec3 getPlaneIntersectionVector(Ray ray) const
-    {
-        Vec3 zero = Vec3(0,0,0);
-        Vec3 N = getNormal();
-        double epsilon = 0.00000001;
-        Vec3 w0 = ray.o - b;
-        double numerator = -dot(N, w0);
-        double denominator = dot(N, ray.d);
-        
-        if (abs(denominator) < epsilon)
-        {
-            //ray lies in triangle plane
-            if (numerator == 0)
-            {
-                return zero;
-            }
-            //ray is disjoint from plane
-            else
-            {
-                return zero;
-            }
-        }
-        
-        double intersectionDistance = numerator / denominator;
-         return (intersectionDistance >= 0) ? getLocationWithMagnitude(ray, intersectionDistance) : zero;
-        
-    }
+//     Vec3 getPlaneIntersectionVector(Ray ray) const
+//    {
+//        Vec3 zero = Vec3(0,0,0);
+//        Vec3 N = getNormal();
+//        double epsilon = 0.00000001;
+//        Vec3 w0 = ray.o - b;
+//        double numerator = -dot(N, w0);
+//        double denominator = dot(N, ray.d);
+//
+//        if (abs(denominator) < epsilon)
+//        {
+//            //ray lies in triangle plane
+//            if (numerator == 0)
+//            {
+//                return zero;
+//            }
+//            //ray is disjoint from plane
+//            else
+//            {
+//                return zero;
+//            }
+//        }
+//
+//        double intersectionDistance = numerator / denominator;
+//         return (intersectionDistance >= 0) ? getLocationWithMagnitude(ray, intersectionDistance) : zero;
+//
+//    }
     
     Triangle2(const Vec3& a, const Vec3& b, const Vec3& c) : a(a), b(b), c(c)  {
     }
     
     Vec3 getNormal() const
     {
-        Vec3 v1 = a-b;
-        Vec3 v2 = c-b;
-        Vec3 pn = CrossProduct(v2, v1);
+        Vec3 v1 = b-a;
+        Vec3 v2 = c-a;
+        Vec3 pn = CrossProduct(v1, v2);
         return pn.normalize();
     }
 
     bool intersect(const Ray& ray, double &t_out) const {
         
-//         Vec3 planeIntersectionVector = getPlaneIntersectionVector(ray);
-//
-//        Vec3 u = a-b;
-//        Vec3 v = b-c;
-//
-//        double uu = dot(u,u);
-//        double uv = dot(u,v);
-//        double vv = dot(v,v);
-//
-//        Vec3 w = planeIntersectionVector - b;
-//
-//        double wu = dot(w,u);
-//        double wv = dot(w,v);
-//        double denominator = (uv * uv) - (uu * vv);
-//
-//        double s = ((uv * wv) - (vv * wu)) / denominator;
-//        if (s < 0 || s > 1)
-//        {
-//            return false;
-//        }
-//        double t = ((uv * wu) - (uu * wv)) / denominator;
-//        if (t < 0 || (s + t) > 1)
-//        {
-//            return false;
-//        }
-//
-//        return true;
-        
-        
-        
-        
+    
         
         const Vec3 o = ray.o;
         const Vec3 d = ray.d;
@@ -393,7 +361,7 @@ struct Triangle2 {
         //        Vec3 v1 = a-b;
         //        Vec3 v2 = b-c;
         Vec3 pn = getNormal();
-
+        
         ////!!!!! find dominant axis!!!!!
         std::string dominatAxis;
         if (abs(pn.x) > abs(pn.y))
@@ -416,19 +384,19 @@ struct Triangle2 {
                 dominatAxis = "z";
             }
         }
-
+        
         //gets intersection of ray and plane
-
+        
         double dis = -dot(pn, b);
         double t = -((pn.x * o.x) + (pn.y * o.y) + (pn.z * o.z) + dis)/( (pn.x * d.x) + (pn.y * d.y) + (pn.z * d.z));
         t_out = t;
-
+        
         Vec2 projectedVertices0 = Vec2(a.y, a.z);
         Vec2 projectedVertices1 =Vec2(b.y, b.z);
         Vec2 projectedVertices2 = Vec2(c.y, c.z);
         Vec3 intersect = Vec3((o.x + d.x*t), (o.y + d.y*t), (o.z + d.z*t));
         Vec2 ri = Vec2(intersect.y, intersect.z);
-
+        
         if (dominatAxis == "x")
         {
             projectedVertices0 = Vec2(a.y, a.z);
@@ -450,18 +418,17 @@ struct Triangle2 {
             projectedVertices2 = Vec2(c.x, c.y);
             ri = Vec2(intersect.x, intersect.y);
         }
-
-
-
+        
+        
         //translate verticies by -ri
         projectedVertices0 = projectedVertices0 - ri;
         projectedVertices1 = projectedVertices1 - ri;
         projectedVertices2 = projectedVertices2 - ri;
-
+        
         Vec2 trianlgeEdges[4] = {projectedVertices0, projectedVertices1, projectedVertices2, projectedVertices0};
-
+        
         ri = ri - ri;
-
+        
         int signHolder;
         if (trianlgeEdges[0].y < 0 )
         {
@@ -471,10 +438,10 @@ struct Triangle2 {
         {
             signHolder = 1;
         }
-
+        
         int nextsing;
         int numCrossing = 0;
-
+        
         for( int j = 0; j < 3; j++)
         {
             if (trianlgeEdges[j+1].y < 0)
@@ -484,7 +451,7 @@ struct Triangle2 {
             else {
                 nextsing = 1;
             }
-
+            
             if (signHolder != nextsing)
             {
                 if(trianlgeEdges[j].x > 0 && trianlgeEdges[j+1].x > 0)
@@ -494,7 +461,7 @@ struct Triangle2 {
                 else if(trianlgeEdges[j].x > 0 || trianlgeEdges[j+1].x > 0)
                 {
                     float uCross = trianlgeEdges[j].x - trianlgeEdges[j].y * (trianlgeEdges[j+1].x - trianlgeEdges[j].x)/(trianlgeEdges[j+1].y - trianlgeEdges[j].y);
-
+                    
                     if (uCross > 0)
                     {
                         numCrossing += 1;
@@ -503,13 +470,14 @@ struct Triangle2 {
             }
             signHolder = nextsing;
         }
-
+        
         if (numCrossing % 2== 0)
         {
             return false;
         }
         return true;
     }
+    
     
 };
 
@@ -578,6 +546,7 @@ int main() {
     const Vec3 ambient(.1, .1, .1);
     const Vec3 blue(0, 0, 1);
     const Vec3 yellow(1, 1, 0);
+    const Vec3 dark(.1, .1, .1);
     
     
 
@@ -650,7 +619,39 @@ int main() {
                 scale255(pix_col);
             }
             
-            
+            if (triangle.intersect(ray, tTriangle) )
+            {
+                
+                //assing two different t values
+                const Vec3 pi = ray.o + ray.d*tTriangle;
+                const Vec3 L = Vec3(1, 0, 0);
+                const double dt = dot(L.normalize(), triangle.getNormal().normalize());
+                const Vec3 N = triangle.getNormal().normalize();
+                
+                
+                Vec3 r = MultiplyScalar( MultiplyScalar(N, 2), dot(N, L) ) - L;
+                
+                Vec3 specHigh = Vec3(1,1,1);
+                const double phong = 32;
+                const Vec3 diffuse = Vec3(1, 1, 1);
+                
+                Vec3 v = (CameraLookFrom - pi).normalize();
+                
+                double bias = .0001;
+                
+                Ray shadowRay((pi + N * bias), (L - pi).normalize());
+                if (sphere2.intersect(shadowRay, t2))
+                {
+                    pix_col = ambient * blue;
+                }
+                else
+                {
+                    pix_col = blue * (ambient + diffuse * fmax(0.0, dot(N,L))) + specHigh * white * pow(fmax(0.0, dot(v,r)), phong);
+                }
+                
+                scale255(pix_col);
+                
+            }
             
              if (sphere2.intersect(ray, t2)) {
                 const Vec3 pi = ray.o + ray.d*t2;
@@ -661,9 +662,9 @@ int main() {
                  const Vec3 specHigh = Vec3(.5, 1, .5);
                  const double phong = 32;
                  
-                 
+                 double bias = .0001;
                 
-                Ray shadowRay(pi, (L - pi).normalize());
+                Ray shadowRay(pi + N * bias, (L - pi).normalize());
              if (sphere.intersect(shadowRay, t))
              {
                  pix_col = ambient * red;
@@ -682,6 +683,9 @@ int main() {
           
             
             
+            
+            
+            
             if (sphere3.intersect(ray, t3)) {
                 const Vec3 pi = ray.o + ray.d*t3;
                 const Vec3 L = Vec3(1, 0, 0);
@@ -696,7 +700,9 @@ int main() {
                 
                 
                 
-                Ray shadowRay(pi, (L - pi).normalize());
+                double bias = .0001;
+                
+                Ray shadowRay(pi + N * bias, (L - pi).normalize());
                 
                 
                 if (triangle.intersect(shadowRay, tTriangle) || triangle2.intersect(shadowRay, tTriangle2))
@@ -717,38 +723,7 @@ int main() {
                 
             }
 
-            if (triangle.intersect(ray, tTriangle) )
-            {
-
-                //assing two different t values
-                const Vec3 pi = ray.o + ray.d*tTriangle;
-                const Vec3 L = Vec3(1, 0, 0);
-                const double dt = dot(L.normalize(), triangle.getNormal().normalize());
-                const Vec3 N = triangle.getNormal().normalize();
-
-
-                Vec3 r = MultiplyScalar( MultiplyScalar(N, 2), dot(N, L) ) - L;
-                
-                Vec3 specHigh = Vec3(1,1,1);
-                const double phong = 32;
-                const Vec3 diffuse = Vec3(1, 1, 1);
-               
-                Vec3 v = (CameraLookFrom - pi).normalize();
-               
-                
-                Ray shadowRay(pi, (L - pi).normalize());
-                if (sphere2.intersect(shadowRay, t2))
-                {
-                    pix_col = ambient * blue;
-                }
-                else
-                {
-                    pix_col = blue * (ambient + diffuse * fmax(0.0, dot(N,L))) + specHigh * white * pow(fmax(0.0, dot(v,r)), phong);
-                }
-
-                scale255(pix_col);
-
-            }
+            
 
 
             
@@ -773,8 +748,11 @@ int main() {
                 Vec3 v = (CameraLookFrom - pi).normalize();
                 const double phong = 4;
                 
-                Ray shadowRay(pi, (L - pi).normalize());
-                if (sphere2.intersect(shadowRay, t2) || triangle.intersect(shadowRay, tTriangle))
+                double bias = .0001;
+                
+                double distance = L.findLength();
+                Ray shadowRay(pi + N * .002, ((L - pi).normalize())/distance);
+                if (sphere2.intersect(shadowRay, t2) || triangle.intersect(shadowRay, tTriangle) )
                 {
                     pix_col = ambient * yellow;
                 }
@@ -793,4 +771,6 @@ int main() {
     }
 }
 
-
+/*
+ t0 < 0
+ */
